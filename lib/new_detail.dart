@@ -14,7 +14,7 @@ import 'dart:typed_data';
 class Post{
   String boardTitle;
   String boardContent;
-  File? frontToBackImage;
+  //File? frontToBackImage;
   http.ByteStream? image;
   int likeCount;
   int commentCount;
@@ -91,10 +91,9 @@ class _BlogListScreenState extends State<BlogListScreen> {
       isLoading = false;
     }
   }
-
-  Future<List<Post>> getTodo(int locationId, int page) async {
+  Future<List<Post>> getTodo(int postid) async {
     String original = 'https://f42b-27-124-178-180.ngrok-free.app';
-    String sub = "/board/paging/${locationId}?page=$page"; // http request를 보낼 url
+    String sub = "/board/findBoard/${postid}"; // http request를 보낼 url
     //String url = "https://ae63-203-230-231-145.ngrok-free.app//board/paging/${locationId}?page=$page"; // http request를 보낼 url
     //String url = "http://192.168.43.20:8080/board/paging/${locationId}?page=$page"; // http request를 보낼 url
     //String url = "https://jsonplaceholder.typicode.com/todos"; // http request를 보낼 url
@@ -162,113 +161,143 @@ class _BlogListScreenState extends State<BlogListScreen> {
     print('commentCount');
     print(snapshot.data[index].commentCount);
 
-    return Card(
-      child: InkWell(
-        onTap: () {
-          // Navigate to the BlogDetailScreen when a blog post is tapped
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => BlogDetailScreen(
-                postId: id,
-                title: title,
-                image: image,
-                content: content,
-                comments: comment,
-                likes: likes,
-                author: '사용자 닉네임',
-              ),
-            ),
-            /*MaterialPageRoute(
-              builder: (context) => BlogDetailScreen(
-                postId: id,
-                /*title: title,
-                //imageUrl: image!,
-                content: content,
-                comments: comment,
-                likes: likes,
-                author: '사용자 닉네임',*/
-              ),
-            ),*/
-          );
-        },
-
-        child: Row(
-          children: [
-            // Left side - Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20.0),
-              // 모서리를 둥글게 만듭니다
-              child: FutureBuilder<Uint8List>(
-                future: snapshot.data[index].image.toBytes(),
-                builder: (context, bytesSnapshot) {
-                  if (bytesSnapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator();
-                  } else if (bytesSnapshot.hasError) {
-                    return Text('Error loading image');
-                  } else if (!bytesSnapshot.hasData) {
-                    return Text('No image data');
-                  } else {
-                    return Image.memory(
-                      bytesSnapshot.data!,
-                      width: 100,
-                      height: 100,
-                    );
-                  }
-                },
-              ),
-            ),
-
-            // Right side - Content
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "$title",
-                            style:
-                            TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            "$content",
-                            overflow: TextOverflow.ellipsis, // 글자 생략
-                          ),
-                        ],
-                      ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                PopupMenuButton<SampleItem>(
+                  initialValue: selectedMenu,
+                  // Callback that sets the selected popup menu item.
+                  onSelected: (SampleItem item) {
+                    if (item == SampleItem.itemOne) {
+                      // 수정 선택 시의 로직 추가
+                      // 수정 화면으로 이동하거나 수정하는 기능을 구현하세요.
+                    } else if (item == SampleItem.itemTwo) {
+                      // 삭제 선택 시의 로직 추가
+                      _showDeleteConfirmationDialog(widget.postId);
+                    }
+                  },
+                  itemBuilder: (BuildContext context) =>
+                  <PopupMenuEntry<SampleItem>>[
+                    const PopupMenuItem<SampleItem>(
+                      value: SampleItem.itemOne,
+                      child: Text('수정'),
                     ),
-
-                    SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Icon(Icons.favorite_outline),
-                        SizedBox(width: 4),
-                        Text('$likes'),
-                        SizedBox(width: 10),
-                        Icon(Icons.chat_bubble_outline),
-                        SizedBox(width: 4),
-                        Text('$comment'),
-                      ],
+                    const PopupMenuItem<SampleItem>(
+                      value: SampleItem.itemTwo,
+                      child: Text('삭제'),
                     ),
-                    SizedBox(height: 8),
-                    // 로딩 상태에 따라 CircularProgressIndicator를 표시
-                    //isLoading
-                        //? Center(child: CircularProgressIndicator())
-                        //: SizedBox.shrink(), // 로딩 상태가 아닐 때는 숨김
                   ],
                 ),
-              ),
+              ],
             ),
           ],
         ),
+      ),
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(widget.author),
+                  SizedBox(height: 10.0),
+                  Text(
+                    widget.title,
+                    style: TextStyle(
+                      fontSize: 24.0,
+                    ),
+                  ),
+                  SizedBox(height: 10.0),
+                  Text(
+                    widget.content,
+                    style: TextStyle(fontSize: 16.0),
+                  ),
+                  SizedBox(height: 10.0),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20.0),
+                    child: Container(
+                      child: /*Image.file(
+                        widget.imageUrl!,
+                        fit: BoxFit.cover,
+                      ),*/
+                      Text('456'),
+                    ),
+                  ),
+                  SizedBox(height: 16.0),
+                  SizedBox(height: 16.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
+                      IconButton(
+                        icon: Icon(
+                          isLiked ? Icons.favorite : Icons.favorite_border,
+                          color: isLiked ? Colors.red : Colors.black,
+                        ),
+                        onPressed: toggleLike,
+                      ),
+                      Text('$likeCount'),
+                      IconButton(
+                        icon: Icon(
+                          isbookmark ? Icons.bookmark : Icons.bookmark_border,
+                          color: isbookmark ? Colors.blue : Colors.black,
+                        ),
+                        onPressed: togglebookmark,
+                      ),
+                      Text('$bookmarkCount'),
+                    ],
+                  ),
+                  Row(
+                    children: <Widget>[
+                      Text('댓글'),
+                      Text(' $chatCount'),
+                    ],
+                  ),
+                  if (mainComments.isNotEmpty)
+                    ...mainComments,
+                ],
+              ),
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.all(16.0),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      hintText: '댓글을 입력하세요',
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.send),
+                  onPressed: () {
+                    // Create a new comment
+                    CommentWidget newComment = CommentWidget(
+                      author: 'Your Username',
+                      // Replace with the actual username or author
+                      content: searchController.text,
+                      onCommentAdded: onCommentAdded, // Pass the callback
+                    );
+
+                    // Notify the parent widget about the new comment
+                    onCommentAdded(newComment);
+
+                    // Clear the input field
+                    searchController.clear();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -305,9 +334,9 @@ class _BlogListScreenState extends State<BlogListScreen> {
 
 
 
-          body: Column(
-            children: <Widget>[
-              Flexible(
+        body: Column(
+          children: <Widget>[
+            Flexible(
               child: SmartRefresher(
                 enablePullDown: true,
                 enablePullUp: true,
@@ -336,54 +365,6 @@ class _BlogListScreenState extends State<BlogListScreen> {
               ),
             ),
           ],
-        ),
-
-        bottomNavigationBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: '홈',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.add_circle),
-              label: '글쓰기',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: '검색',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.chat),
-              label: '채팅',
-            ),
-          ],
-          onTap: (int index) {
-            if (index == 1) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PostCreationScreen(), // 글작성 페이지 이동
-                ),
-              );
-            }
-            else if (index == 2) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SearchScreen(), //검색 페이지 이동
-                ),
-              );
-            }
-            else if (index == 3) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChatScreen(), //검색 페이지 이동
-                ),
-              );
-            }
-          },
         ),
       ),
     );

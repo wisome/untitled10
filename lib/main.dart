@@ -1,13 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:untitled10/blog_list_screen.dart';
+import 'package:untitled10/new_list.dart';
 import 'package:untitled10/chat_ex2.dart';
 import 'simple-test.dart';
 import 'new.dart';
-import 'chat_ex.dart';
+import 'exex.dart';
 
-import 'package:untitled10/chat.dart';
+//import 'package:untitled10/chat.dart';
+
 void main() {
   runApp(MyApp());
 }
@@ -20,7 +21,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home://YourScreen()
       //MyHomePage()
-      BlogListScreen(),
+        ChatScreen()
+
+      //ChatScreen(postId: 25,)
+      //BlogListScreen(),
         //home: HomePage(),
         //MyHomePage(),
       //PostCreationScreen()

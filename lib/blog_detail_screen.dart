@@ -3,10 +3,12 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:untitled10/comment.dart';
 import 'dart:convert';
-
+import 'dart:typed_data';
+import 'dart:async';
 class BlogDetailScreen extends StatefulWidget {
   final String title;
   //final File? imageUrl;
+  final http.ByteStream? image;
   final String content;
   final int likes;
   final int comments;
@@ -15,7 +17,7 @@ class BlogDetailScreen extends StatefulWidget {
 
   BlogDetailScreen({
     required this.title,
-    //required this.imageUrl,
+    required this.image,
     required this.content,
     required this.likes,
     required this.comments,
@@ -30,6 +32,7 @@ class BlogDetailScreen extends StatefulWidget {
 enum SampleItem { itemOne, itemTwo}
 
 class _BlogDetailScreenState extends State<BlogDetailScreen> {
+
   SampleItem? selectedMenu;
   int likeCount = 0; // 초기 좋아요 수
   bool isLiked = false;
@@ -87,12 +90,26 @@ class _BlogDetailScreenState extends State<BlogDetailScreen> {
       print('Failed to send comment to the backend');
     }
   }
+  Future<Uint8List> getImageBytes() async {
+    Completer<Uint8List> completer = Completer();
+    http.ByteStream imageStream = widget.image!;
 
+    List<int> imageBytes = [];
+    await imageStream.listen((List<int> chunk) {
+      imageBytes.addAll(chunk);
+    }, onDone: () {
+      completer.complete(Uint8List.fromList(imageBytes));
+    }, onError: (error) {
+      completer.completeError(error);
+    });
+
+    return completer.future;
+  }
   Future<bool> sendCommentToBackend(CommentWidget newComment) async {
     // Replace 'YOUR_BACKEND_API_URL' with the actual URL of your backend API
     try {
       final response = await http.post(
-        Uri.parse('YOUR_BACKEND_API_URL/comments'), // Replace with the actual URL
+        Uri.parse('f42b-27-124-178-180.ngrok-free.app/comments'), // Replace with the actual URL
         body: {
           'author': newComment.author,
           'content': newComment.content,
@@ -106,11 +123,14 @@ class _BlogDetailScreenState extends State<BlogDetailScreen> {
     }
   }
   // 글 삭제 함수
+  String authToken = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IuygleyerOuvvCIsImlhdCI6MTcwMDIyNjQ1MCwiZXhwIjoxNzAwMjI4MjUwfQ.OWfPNrZDD7ljWU12sqTaX64fKQW8mJoIKQ_Br0tdNGA';
+
   Future<void> _deletePost(postId) async {
     try {
       final response = await http.delete(
-        Uri.parse("https:// 주소 /$postId"),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse("https://f42b-27-124-178-180.ngrok-free.app/user/remove/${postId}"),
+        headers: {'Content-Type': 'application/json',
+          'Authorization': authToken,},
       );
 
       if (response.statusCode == 200) {
@@ -219,13 +239,28 @@ class _BlogDetailScreenState extends State<BlogDetailScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20.0),
                     child: Container(
-                      child: /*Image.file(
-                        widget.imageUrl!,
-                        fit: BoxFit.cover,
-                      ),*/
-                      Text('456'),
+                      child: FutureBuilder<Uint8List>(
+                        future: getImageBytes(),
+                        builder: (context, bytesSnapshot) {
+                          if (bytesSnapshot.connectionState == ConnectionState.waiting) {
+                            return CircularProgressIndicator();
+                          } else if (bytesSnapshot.hasError) {
+                            return Text('Error loading image');
+                          } else if (!bytesSnapshot.hasData) {
+                            return Text('No image data');
+                          } else {
+                            return Image.memory(
+                              bytesSnapshot.data!,
+                              width: 100,
+                              height: 100,
+                            );
+                          }
+                        },
+                      ),
                     ),
-                  ),
+                      //Text('456'),
+                    ),
+
                   SizedBox(height: 16.0),
                   SizedBox(height: 16.0),
                   Row(

@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ChatScreen extends StatefulWidget {
-  final String postId;
+  final int postId;
 
   ChatScreen({required this.postId});
 
@@ -19,8 +19,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
+    print('123');
     super.initState();
-    channel = IOWebSocketChannel.connect('ws://your-backend-url');
+    channel = IOWebSocketChannel.connect('ws://6f93-112-220-77-99.ngrok-free.app/chat/5');
+
+    //channel = IOWebSocketChannel.connect('ws://eb88-112-220-77-99.ngrok-free.app/chat/message');
     channel.sink.add(widget.postId);
   }
 
@@ -75,6 +78,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_textController.text.isNotEmpty) {
       channel.sink.add(_textController.text);
       _textController.clear();
+      print("전송되고있나?");
     }
   }
 
@@ -87,7 +91,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
 
 class MyHomePage extends StatelessWidget {
-  final String postId = 'your_post_id'; // Replace with the actual postId
+  final int postId = 5; // Replace with the actual postId
 
   @override
   Widget build(BuildContext context) {
@@ -99,8 +103,8 @@ class MyHomePage extends StatelessWidget {
         child: ElevatedButton(
           onPressed: () async {
             bool chatRoomExists = await ChatApi.doesChatRoomExist(postId);
-            chatRoomExists = true;
-            chatRoomExists = false;
+            //chatRoomExists = true;
+            //chatRoomExists = false;
             print('chatRoomExists');
             print(chatRoomExists);
 
@@ -126,6 +130,12 @@ class MyHomePage extends StatelessWidget {
                           // For simplicity, we'll just print a message
                           ChatApi.createChatRoom(postId);
                           print('Creating a new chat room...');
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreen(postId: postId),
+                            ),
+                          );
                         }
                       },
                       child: Text('OK'),
@@ -149,11 +159,12 @@ class MyHomePage extends StatelessWidget {
 }
 
 class ChatApi {
-  static const String baseUrl = 'https://your-api-base-url'; // Replace with your actual API base URL
+  static const String baseUrl = 'https://6f93-112-220-77-99.ngrok-free.app'; // Replace with your actual API base URL
 
-  static Future<bool> doesChatRoomExist(String postId) async {
+  static Future<bool> doesChatRoomExist(int postId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/checkChatRoom?postId=$postId'));
+      //final response = await http.post(Uri.parse('$baseUrl/chat/room?roomId=${postId}')); //채팅방생성
+      final response = await http.get(Uri.parse('$baseUrl/chat/room/enter/${postId}')); //채팅방입장
 
       if (response.statusCode == 200) {
         // Parse the response and check if the chat room exists
@@ -171,11 +182,11 @@ class ChatApi {
     }
   }
 
-  static Future<void> createChatRoom(String postId) async {
+  static Future<void> createChatRoom(int postId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/createChatRoom'),
-        body: {'postId': postId},
+      final response = await http.get(
+        Uri.parse('$baseUrl/chat/rooms'),
+        //body: {'postId': postId},
       );
 
       if (response.statusCode == 200) {
@@ -187,6 +198,7 @@ class ChatApi {
       }
     } catch (e) {
       // Handle network errors
+      print('catch');
       print('Error creating chat room: $e');
     }
   }
